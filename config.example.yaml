@@ -1,12 +1,12 @@
 # === Model Configuration ===
 # LiteLLM model identifier for document analysis. Must support PDF and/or image/vision input.
-model: "xai/grok-4.20-0309-non-reasoning"
+model: "anthropic/claude-opus-4-6"
 
 # API key for the provider of the configured model.
 api_key: "your-api-key-here"
 
 # LiteLLM model identifier used by booklet-model-updater to query for available models.
-model_updater_model: "xai/grok-4.20-0309-non-reasoning"
+model_updater_model: "anthropic/claude-opus-4-6"
 
 # Optional API key for the model updater. If empty, falls back to api_key above.
 model_updater_api_key: ""
