@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """booklet-reader — Extract performance data from music program booklets."""
 
+import argparse
 import json
 import os
 import sys
@@ -35,12 +36,13 @@ def main():
     from booklet_reader.llm import run_cascade, get_mime_type, LLMError
     from booklet_reader.gaps import fill_gaps
 
-    # 2. Check args
-    if len(sys.argv) != 2:
-        print("Usage: booklet-reader <document>", file=sys.stderr)
-        sys.exit(2)
+    # 2. Parse args
+    parser = argparse.ArgumentParser(description="Extract performance data from music program booklets.")
+    parser.add_argument("document", help="Path to the document file (PDF, DOC, DOCX, ODT, or image)")
+    parser.add_argument("-c", "--comment", help="Additional guidance for the LLM (e.g. 'Look at page 3')")
+    args = parser.parse_args()
 
-    document_path = os.path.abspath(sys.argv[1])
+    document_path = os.path.abspath(args.document)
 
     # 3. Config check
     config_path = os.path.expanduser("~/.config/booklet-reader/config.yaml")
@@ -83,29 +85,20 @@ def main():
 
     try:
         if file_type == FILE_TYPE_DOCUMENT:
-            # Level 1: raw document
             with open(document_path, "rb") as f:
                 document_bytes = f.read()
             document_mime = get_mime_type(document_path)
-
-            # Level 2: convert to PDF
             pdf_path = convert_to_pdf(document_path)
             with open(pdf_path, "rb") as f:
                 pdf_bytes = f.read()
-
-            # Level 3: render PDF to images
             image_list = render_pdf_to_images(pdf_path)
 
         elif file_type == FILE_TYPE_PDF:
-            # Level 2: PDF directly
             with open(document_path, "rb") as f:
                 pdf_bytes = f.read()
-
-            # Level 3: render to images
             image_list = render_pdf_to_images(document_path)
 
         elif file_type == FILE_TYPE_IMAGE:
-            # Level 3: image directly
             img_bytes = read_image_file(document_path)
             image_list = [img_bytes]
 
@@ -114,7 +107,7 @@ def main():
         sys.exit(2)
 
     # 7. Build prompt and run cascade
-    prompt = build_prompt(config["performers"])
+    prompt = build_prompt(config["performers"], comment=args.comment)
     api_key = get_api_key(config, "model")
 
     try:
