@@ -1,7 +1,7 @@
 import json
 
 
-def build_prompt(performers):
+def build_prompt(performers, comment=None):
     performer_lines = []
     for p in performers:
         aliases_by_instrument = []
@@ -43,6 +43,13 @@ def build_prompt(performers):
         ensure_ascii=False,
     )
 
+    comment_block = ""
+    if comment:
+        comment_block = f"""
+=== ADDITIONAL GUIDANCE ===
+{comment}
+"""
+
     return f"""You are analyzing a music program booklet (műsorfüzet). These pages are from a document about a music competition, concert, recital, festival, or other public performance.
 
 Your task: find any performances by the following performers and extract structured data.
@@ -60,6 +67,7 @@ Your task: find any performances by the following performers and extract structu
 7. If an accompanist (kísérő, zongorakísérő) is mentioned, include it.
 8. If the performer is part of a duo, trio, quartet, or other ensemble, list the other members as co_performers with their instruments. If solo, use an empty array.
 9. If a performer appears in multiple entries (e.g., different categories or rounds), return a separate object for each appearance.
+10. If you cannot extract the requested data — for example, because the document is unreadable, the format is unrecognizable, or none of the listed performers appear — do NOT return malformed JSON. Instead, return a plain text explanation of what went wrong and what you were able to see in the document.
 
 === OUTPUT FORMAT ===
 Return ONLY a valid JSON array. No markdown, no explanation, no code fences. Just the JSON.
@@ -76,7 +84,7 @@ Schema:
 - pieces must always be an array, even for a single piece.
 - co_performers must always be an array, empty if solo.
 - teacher and accompanist should be null if not mentioned in the document.
-"""
+{comment_block}"""
 
 
 def build_retry_prompt(previous_response):

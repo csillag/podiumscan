@@ -82,3 +82,36 @@ class TestBuildRetryPrompt:
     def test_asks_for_all_fields(self):
         prompt = build_retry_prompt("[]")
         assert "required" in prompt.lower() or "field" in prompt.lower()
+
+
+class TestBuildPromptComment:
+    def test_no_comment_by_default(self):
+        performers = [
+            {
+                "name": "Test",
+                "instruments": [{"names": "zongora", "teachers": [], "accompanists": []}],
+            }
+        ]
+        prompt = build_prompt(performers)
+        assert "ADDITIONAL GUIDANCE" not in prompt
+
+    def test_comment_included(self):
+        performers = [
+            {
+                "name": "Test",
+                "instruments": [{"names": "zongora", "teachers": [], "accompanists": []}],
+            }
+        ]
+        prompt = build_prompt(performers, comment="Look at page 3")
+        assert "ADDITIONAL GUIDANCE" in prompt
+        assert "Look at page 3" in prompt
+
+    def test_fallback_instruction_present(self):
+        performers = [
+            {
+                "name": "Test",
+                "instruments": [{"names": "zongora", "teachers": [], "accompanists": []}],
+            }
+        ]
+        prompt = build_prompt(performers)
+        assert "plain text explanation" in prompt.lower() or "plain text" in prompt.lower()
