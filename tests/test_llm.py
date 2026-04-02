@@ -97,14 +97,16 @@ class TestTryLevel:
     def test_success_first_attempt(self):
         good = _mock_response('[{"event_name": "OK"}]')
         with patch("litellm.completion", return_value=good):
-            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+            result, raw = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result[0]["event_name"] == "OK"
+        assert raw == '[{"event_name": "OK"}]'
 
     def test_success_with_embedded_json(self):
         mixed = _mock_response('Found it!\n[{"event_name": "OK"}]')
         with patch("litellm.completion", return_value=mixed):
-            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+            result, raw = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result[0]["event_name"] == "OK"
+        assert "Found it!" in raw
 
     def test_explanation_hidden_without_verbose(self, capsys):
         mixed = _mock_response('Found it!\n[{"event_name": "OK"}]')
@@ -125,19 +127,21 @@ class TestTryLevel:
         bad = _mock_response("I cannot parse this document.")
         good = _mock_response('[{"event_name": "OK"}]')
         with patch("litellm.completion", side_effect=[bad, good]):
-            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+            result, raw = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result[0]["event_name"] == "OK"
 
     def test_returns_none_after_two_failures(self):
         bad = _mock_response("not json")
         with patch("litellm.completion", return_value=bad):
-            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+            result, raw = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result is None
+        assert raw is None
 
     def test_returns_none_on_api_error(self):
         with patch("litellm.completion", side_effect=Exception("API down")):
-            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+            result, raw = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result is None
+        assert raw is None
 
     def test_failure_always_prints_cyan(self, capsys):
         explanation = "I could not find any of the listed performers."

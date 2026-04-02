@@ -124,7 +124,7 @@ def try_level(model, api_key, messages, prompt, verbose=False):
             response = litellm.completion(model=model, api_key=api_key, messages=messages)
         except Exception as e:
             print(f"API error: {type(e).__name__}", file=sys.stderr)
-            return None
+            return None, None
 
         raw_text = response.choices[0].message.content
         results, explanation = parse_llm_response(raw_text)
@@ -133,7 +133,7 @@ def try_level(model, api_key, messages, prompt, verbose=False):
             # Successful extraction
             if explanation and verbose:
                 print(f"{CYAN}{explanation}{RESET}", file=sys.stderr)
-            return results
+            return results, raw_text
 
         # No JSON found at all
         print(f"{CYAN}{explanation or raw_text}{RESET}", file=sys.stderr)
@@ -148,7 +148,7 @@ def try_level(model, api_key, messages, prompt, verbose=False):
                 {"role": "user", "content": retry_prompt},
             ]
             continue
-        return None
+        return None, None
 
 
 _MIME_TYPES = {
@@ -198,7 +198,7 @@ def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes
 
     for i, (level_name, messages) in enumerate(levels):
         print(_LEVEL_NAMES[level_name], file=sys.stderr)
-        result = try_level(model, api_key, messages, prompt, verbose=verbose)
+        result, raw_text = try_level(model, api_key, messages, prompt, verbose=verbose)
         if result is not None:
             return result
         if i < len(levels) - 1:
