@@ -1,4 +1,4 @@
-# booklet-reader
+# podiumscan
 
 Extract structured performance data from music program booklets using an LLM.
 
@@ -13,11 +13,11 @@ pip install -r requirements.txt
 Copy the example config to your config directory:
 
 ```bash
-mkdir -p ~/.config/booklet-reader
-cp config.example.yaml ~/.config/booklet-reader/config.yaml
+mkdir -p ~/.config/podiumscan
+cp config.example.yaml ~/.config/podiumscan/config.yaml
 ```
 
-Edit `~/.config/booklet-reader/config.yaml`:
+Edit `~/.config/podiumscan/config.yaml`:
 - Set `model` to a vision-capable LLM (default: `anthropic/claude-opus-4-6`)
 - Set `api_key` to your provider's API key
 - Add your performers under `performers`
@@ -25,10 +25,10 @@ Edit `~/.config/booklet-reader/config.yaml`:
 ## Usage
 
 ```bash
-./booklet-reader document.pdf
-./booklet-reader concert-poster.jpg
-./booklet-reader -c "Look at page 3" program.pdf
-./booklet-reader -v document.docx
+./podiumscan-read document.pdf
+./podiumscan-read concert-poster.jpg
+./podiumscan-read -c "Look at page 3" program.pdf
+./podiumscan-read -v document.docx
 ```
 
 ### Options
@@ -88,7 +88,7 @@ See `config.example.yaml` for the full format. Key sections:
 ## Model updater
 
 ```bash
-./booklet-model-updater
+./podiumscan-update-models
 ```
 
 Queries an LLM for currently available PDF/vision-capable models, cross-references with LiteLLM's registry, and updates the commented model list in your config file.

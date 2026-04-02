@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""booklet-reader — Extract performance data from music program booklets."""
+"""podiumscan — Extract performance data from music program booklets."""
 
 import argparse
 import json
@@ -14,11 +14,11 @@ def get_script_dir():
 def main():
     # 1. Check Python dependencies
     try:
-        from booklet_reader.dependencies import check_python_deps, DependencyError
+        from podiumscan.dependencies import check_python_deps, DependencyError
         check_python_deps()
     except ImportError:
         print(
-            "Error: booklet_reader package not found. Run from the project directory.",
+            "Error: podiumscan package not found. Run from the project directory.",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -26,15 +26,15 @@ def main():
         print(str(e), file=sys.stderr)
         sys.exit(2)
 
-    from booklet_reader.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
-    from booklet_reader.converter import (
+    from podiumscan.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
+    from podiumscan.converter import (
         detect_file_type, convert_to_pdf, render_pdf_to_images, read_image_file,
         ConversionError, FILE_TYPE_DOCUMENT, FILE_TYPE_PDF, FILE_TYPE_IMAGE,
     )
-    from booklet_reader.dependencies import check_libreoffice
-    from booklet_reader.prompt import build_prompt
-    from booklet_reader.llm import run_cascade, get_mime_type, LLMError
-    from booklet_reader.gaps import fill_gaps
+    from podiumscan.dependencies import check_libreoffice
+    from podiumscan.prompt import build_prompt
+    from podiumscan.llm import run_cascade, get_mime_type, LLMError
+    from podiumscan.gaps import fill_gaps
 
     # 2. Parse args
     parser = argparse.ArgumentParser(description="Extract performance data from music program booklets.")
@@ -46,7 +46,7 @@ def main():
     document_path = os.path.abspath(args.document)
 
     # 3. Config check
-    config_path = os.path.expanduser("~/.config/booklet-reader/config.yaml")
+    config_path = os.path.expanduser("~/.config/podiumscan/config.yaml")
     example_path = os.path.join(get_script_dir(), "config.example.yaml")
 
     try:

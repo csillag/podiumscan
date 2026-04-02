@@ -1,5 +1,5 @@
 import pytest
-from booklet_reader.prompt import build_prompt, build_retry_prompt
+from podiumscan.prompt import build_prompt, build_retry_prompt
 
 
 class TestBuildPrompt:

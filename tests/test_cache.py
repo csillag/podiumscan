@@ -1,7 +1,7 @@
 import os
 import time
 import pytest
-from booklet_reader.cache import compute_cache_key, read_cache, write_cache, CACHE_DIR
+from podiumscan.cache import compute_cache_key, read_cache, write_cache, CACHE_DIR
 
 
 class TestComputeCacheKey:
@@ -28,19 +28,19 @@ class TestComputeCacheKey:
 
 class TestWriteAndReadCache:
     def test_write_then_read(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("booklet_reader.cache.CACHE_DIR", str(tmp_path))
+        monkeypatch.setattr("podiumscan.cache.CACHE_DIR", str(tmp_path))
         key = "abc123"
         write_cache(key, "raw llm response text")
         result = read_cache(key, ttl_seconds=86400)
         assert result == "raw llm response text"
 
     def test_read_miss(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("booklet_reader.cache.CACHE_DIR", str(tmp_path))
+        monkeypatch.setattr("podiumscan.cache.CACHE_DIR", str(tmp_path))
         result = read_cache("nonexistent", ttl_seconds=86400)
         assert result is None
 
     def test_expired_entry(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("booklet_reader.cache.CACHE_DIR", str(tmp_path))
+        monkeypatch.setattr("podiumscan.cache.CACHE_DIR", str(tmp_path))
         key = "expired123"
         write_cache(key, "old data")
         cache_file = os.path.join(str(tmp_path), f"{key}.txt")
@@ -52,6 +52,6 @@ class TestWriteAndReadCache:
 
     def test_creates_cache_dir(self, tmp_path, monkeypatch):
         cache_dir = os.path.join(str(tmp_path), "subdir", "cache")
-        monkeypatch.setattr("booklet_reader.cache.CACHE_DIR", cache_dir)
+        monkeypatch.setattr("podiumscan.cache.CACHE_DIR", cache_dir)
         write_cache("key123", "data")
         assert os.path.exists(os.path.join(cache_dir, "key123.txt"))

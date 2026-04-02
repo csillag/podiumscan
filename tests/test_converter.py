@@ -1,7 +1,7 @@
 import os
 import pytest
 from unittest.mock import patch, MagicMock
-from booklet_reader.converter import (
+from podiumscan.converter import (
     detect_file_type,
     convert_to_pdf,
     render_pdf_to_images,

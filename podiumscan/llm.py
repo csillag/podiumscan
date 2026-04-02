@@ -7,8 +7,8 @@ import logging
 
 import litellm
 
-from booklet_reader.cache import compute_cache_key, read_cache, write_cache
-from booklet_reader.prompt import build_retry_prompt
+from podiumscan.cache import compute_cache_key, read_cache, write_cache
+from podiumscan.prompt import build_retry_prompt
 
 # Suppress LiteLLM's verbose logging (provider lists, debug hints, etc.)
 litellm.suppress_debug_info = True

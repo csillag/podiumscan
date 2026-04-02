@@ -1,5 +1,5 @@
 import pytest
-from booklet_reader.gaps import fill_gaps
+from podiumscan.gaps import fill_gaps
 
 PERFORMERS_CONFIG = [
     {

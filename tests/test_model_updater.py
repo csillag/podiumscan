@@ -1,5 +1,5 @@
 import pytest
-from booklet_reader.model_updater import (
+from podiumscan.model_updater import (
     extract_model_block,
     build_updated_model_block,
     update_config_file_models,

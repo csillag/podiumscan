@@ -3,7 +3,7 @@ import os
 import time
 
 
-CACHE_DIR = os.path.expanduser("~/.cache/booklet-reader")
+CACHE_DIR = os.path.expanduser("~/.cache/podiumscan")
 
 
 def compute_cache_key(config_bytes, doc_bytes, prompt, level_name):

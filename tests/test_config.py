@@ -1,7 +1,7 @@
 import os
 import pytest
 import yaml
-from booklet_reader.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
+from podiumscan.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
 
 VALID_CONFIG = {
     "model": "xai/grok-4.20-0309-non-reasoning",
@@ -117,7 +117,7 @@ class TestLoadConfig:
 
 class TestEnsureConfig:
     def test_copies_example_when_missing(self, tmp_path):
-        config_path = str(tmp_path / "config" / "booklet-reader" / "config.yaml")
+        config_path = str(tmp_path / "config" / "podiumscan" / "config.yaml")
         example_path = str(tmp_path / "config.example.yaml")
         with open(example_path, "w") as f:
             yaml.dump(VALID_CONFIG, f)

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from booklet_reader.dependencies import check_python_deps, check_libreoffice, DependencyError
+from podiumscan.dependencies import check_python_deps, check_libreoffice, DependencyError
 
 
 class TestCheckPythonDeps:

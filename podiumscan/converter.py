@@ -46,7 +46,7 @@ def convert_to_pdf(filepath):
             raise ConversionError(f"Error: File not found: '{filepath}'")
         return filepath
 
-    tmp_dir = tempfile.mkdtemp(prefix="booklet-reader-")
+    tmp_dir = tempfile.mkdtemp(prefix="podiumscan-")
     try:
         result = subprocess.run(
             [

@@ -9,21 +9,21 @@ def get_script_dir():
 
 def main():
     try:
-        from booklet_reader.dependencies import check_python_deps, DependencyError
+        from podiumscan.dependencies import check_python_deps, DependencyError
         check_python_deps()
     except ImportError:
-        print("Error: booklet_reader package not found. Run from the project directory.", file=sys.stderr)
+        print("Error: podiumscan package not found. Run from the project directory.", file=sys.stderr)
         sys.exit(1)
     except DependencyError as e:
         print(str(e), file=sys.stderr)
         sys.exit(1)
 
-    from booklet_reader.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
-    from booklet_reader.model_updater import (
+    from podiumscan.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
+    from podiumscan.model_updater import (
         extract_model_block, query_llm_for_models, cross_reference_with_litellm, update_config_file_models,
     )
 
-    config_path = os.path.expanduser("~/.config/booklet-reader/config.yaml")
+    config_path = os.path.expanduser("~/.config/podiumscan/config.yaml")
     example_path = os.path.join(get_script_dir(), "config.example.yaml")
 
     try:
