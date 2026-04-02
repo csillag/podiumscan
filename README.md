@@ -1,5 +1,7 @@
 # podiumscan
 
+![podiumscan](images/podiumscan.jpg)
+
 Extract structured performance data from music program booklets using an LLM.
 
 Reads competition schedules, concert programs, recital booklets, and event posters (PDF, DOC, DOCX, ODT, PNG, JPG, WEBP), finds performances by configured performers, and outputs structured JSON.
