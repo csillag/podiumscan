@@ -1,0 +1,59 @@
+# === Model Configuration ===
+# LiteLLM model identifier for document analysis. Must support PDF and/or image/vision input.
+model: "xai/grok-4.20-0309-non-reasoning"
+
+# API key for the provider of the configured model.
+api_key: "your-api-key-here"
+
+# LiteLLM model identifier used by booklet-model-updater to query for available models.
+model_updater_model: "xai/grok-4.20-0309-non-reasoning"
+
+# Optional API key for the model updater. If empty, falls back to api_key above.
+model_updater_api_key: ""
+
+# === Available Models (PDF and/or Vision-Capable) ===
+# Copy a model identifier from this list to the 'model' field above.
+# DO NOT edit this block manually — it is maintained by booklet-model-updater.
+# --- BEGIN AVAILABLE MODELS ---
+# available_models:
+#   - anthropic/claude-opus-4-6
+#   - anthropic/claude-sonnet-4-6
+#   - openai/gpt-4o
+#   - openai/gpt-4.1
+#   - gemini/gemini-2.5-pro
+#   - gemini/gemini-2.5-flash
+#   - xai/grok-4.20-0309-non-reasoning
+#   - xai/grok-4.20-0309-reasoning
+# --- END AVAILABLE MODELS ---
+
+# === Performers ===
+# List of performers to search for in program booklets.
+# Each performer has a name and a list of instruments.
+# Each instrument has aliases (slash-separated), teachers, and accompanists.
+# The first alias is the canonical name used in output.
+# Teachers and accompanists have date ranges (from/to). 'to' is optional (means current).
+performers:
+  - name: "Nagy Eszter"
+    instruments:
+      - names: "hegedű / violin"
+        teachers:
+          - name: "Tóth Katalin"
+            from: 2020-09-01
+            to: 2025-06-30
+        accompanists:
+          - name: "Fekete Mária"
+            from: 2023-09-01
+      - names: "zongora / piano"
+        teachers:
+          - name: "Horváth László"
+            from: 2021-09-01
+
+  - name: "Szabó Bence"
+    instruments:
+      - names: "gordonka / cello"
+        teachers:
+          - name: "Varga Péter"
+            from: 2022-09-01
+        accompanists:
+          - name: "Molnár Zsófia"
+            from: 2023-09-01
