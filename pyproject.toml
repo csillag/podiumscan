@@ -15,6 +15,11 @@ dependencies = [
     "PyMuPDF",
 ]
 
+[project.urls]
+Homepage = "https://github.com/csillag/podiumscan"
+Repository = "https://github.com/csillag/podiumscan"
+Issues = "https://github.com/csillag/podiumscan/issues"
+
 [project.optional-dependencies]
 dev = [
     "pytest",
