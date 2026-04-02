@@ -12,6 +12,10 @@ class LLMError(Exception):
     pass
 
 
+CYAN = "\033[36m"
+RESET = "\033[0m"
+
+
 def build_messages_with_document(prompt, doc_bytes, mime_type):
     """Build messages with a raw document file attached."""
     b64 = base64.b64encode(doc_bytes).decode("utf-8")
@@ -67,6 +71,7 @@ def parse_llm_response(raw_text):
 def try_level(model, api_key, messages, prompt):
     """Try sending messages to the LLM. Retry once on invalid JSON with a nudge.
 
+    If the LLM returns plain text (not JSON), print it in cyan to stderr.
     Returns parsed results list on success, or None on failure.
     """
     for attempt in range(2):
@@ -80,6 +85,8 @@ def try_level(model, api_key, messages, prompt):
         try:
             return parse_llm_response(raw_text)
         except LLMError:
+            # Print the LLM's response in cyan — it's likely a plain text explanation
+            print(f"{CYAN}{raw_text}{RESET}", file=sys.stderr)
             if attempt == 0:
                 print(
                     "LLM returned invalid JSON. Retrying with guidance...",
@@ -108,6 +115,13 @@ def get_mime_type(filepath):
     return _MIME_TYPES.get(ext)
 
 
+_LEVEL_NAMES = {
+    "raw document": "Attempting raw document submission...",
+    "PDF": "Attempting PDF submission...",
+    "images": "Attempting image submission...",
+}
+
+
 def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes, image_list):
     """Run the cascading LLM submission: raw document → PDF → images.
 
@@ -132,13 +146,11 @@ def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes
         levels.append(("images", messages))
 
     for i, (level_name, messages) in enumerate(levels):
+        print(_LEVEL_NAMES[level_name], file=sys.stderr)
         result = try_level(model, api_key, messages, prompt)
         if result is not None:
             return result
         if i < len(levels) - 1:
-            print(
-                f"Level {i + 1} ({level_name}) failed, falling to next format...",
-                file=sys.stderr,
-            )
+            print("Moving to next format...", file=sys.stderr)
 
     raise LLMError("Error: All input format levels failed. LLM could not produce valid output.")

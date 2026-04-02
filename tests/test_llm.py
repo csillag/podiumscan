@@ -145,3 +145,48 @@ class TestRunCascade:
                     pdf_bytes=b"fake pdf",
                     image_list=[b"\x89PNGfake"],
                 )
+
+
+class TestTryLevelPlainText:
+    def test_plain_text_printed_cyan_on_stderr(self, capsys):
+        explanation = "I could not find any of the listed performers in this document."
+        bad = _mock_response(explanation)
+        with patch("litellm.completion", return_value=bad):
+            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+        assert result is None
+        captured = capsys.readouterr()
+        assert explanation in captured.err
+        assert "\033[36m" in captured.err  # cyan
+
+
+class TestRunCascadeNarration:
+    def test_narrates_levels_on_stderr(self, capsys):
+        good = _mock_response('[{"event_name": "OK"}]')
+        with patch("litellm.completion", return_value=good):
+            run_cascade(
+                model="model",
+                api_key="key",
+                prompt="find performers",
+                document_bytes=None,
+                document_mime=None,
+                pdf_bytes=b"fake pdf",
+                image_list=None,
+            )
+        captured = capsys.readouterr()
+        assert "Attempting PDF submission" in captured.err
+
+    def test_narrates_fallback_on_stderr(self, capsys):
+        bad = _mock_response("I cannot read this document.")
+        good = _mock_response('[{"event_name": "OK"}]')
+        with patch("litellm.completion", side_effect=[bad, bad, good]):
+            run_cascade(
+                model="model",
+                api_key="key",
+                prompt="find performers",
+                document_bytes=None,
+                document_mime=None,
+                pdf_bytes=b"fake pdf",
+                image_list=[b"\x89PNGfake"],
+            )
+        captured = capsys.readouterr()
+        assert "Moving to next format" in captured.err
