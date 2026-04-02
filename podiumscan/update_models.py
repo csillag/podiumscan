@@ -1,0 +1,73 @@
+"""podiumscan-update-models — Update the list of available PDF/vision-capable LLM models."""
+
+import os
+import sys
+
+
+def _find_example_config():
+    """Find config.example.yaml relative to the package installation."""
+    package_dir = os.path.dirname(os.path.abspath(__file__))
+    candidate = os.path.join(package_dir, "..", "config.example.yaml")
+    if os.path.exists(candidate):
+        return os.path.abspath(candidate)
+    candidate = os.path.join(package_dir, "config.example.yaml")
+    if os.path.exists(candidate):
+        return candidate
+    return None
+
+
+def main():
+    try:
+        from podiumscan.dependencies import check_python_deps, DependencyError
+        check_python_deps()
+    except ImportError:
+        print("Error: podiumscan package not found.", file=sys.stderr)
+        sys.exit(1)
+    except DependencyError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
+
+    from podiumscan.config import load_config, validate_config, ensure_config, get_api_key, ConfigError
+    from podiumscan.model_updater import (
+        extract_model_block, query_llm_for_models, cross_reference_with_litellm, update_config_file_models,
+    )
+
+    config_path = os.path.expanduser("~/.config/podiumscan/config.yaml")
+    example_path = _find_example_config()
+
+    if example_path is None:
+        print("Error: config.example.yaml not found.", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        exists = ensure_config(config_path, example_path)
+        if not exists:
+            print(f"Before reading, please fill in your configuration at {config_path}", file=sys.stderr)
+            sys.exit(0)
+        config = load_config(config_path)
+        validate_config(config)
+    except ConfigError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        config_text = f.read()
+    current_models = set(extract_model_block(config_text))
+
+    model = config.get("model_updater_model", config["model"])
+    api_key = get_api_key(config, "model_updater")
+    llm_models = query_llm_for_models(model, api_key)
+
+    valid_models = cross_reference_with_litellm(llm_models)
+
+    all_models = current_models | set(valid_models)
+    new_models = all_models - current_models
+
+    if new_models:
+        for m in sorted(new_models):
+            print(m)
+        update_config_file_models(config_path, sorted(all_models))
+
+
+if __name__ == "__main__":
+    main()

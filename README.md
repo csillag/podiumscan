@@ -7,15 +7,18 @@ Reads competition schedules, concert programs, recital booklets, and event poste
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+pip install podiumscan
 ```
 
-Copy the example config to your config directory:
+Or for development:
 
 ```bash
-mkdir -p ~/.config/podiumscan
-cp config.example.yaml ~/.config/podiumscan/config.yaml
+git clone <repo-url>
+cd podiumscan
+make install-dev
 ```
+
+On first run, the tool copies the example config to `~/.config/podiumscan/config.yaml` automatically.
 
 Edit `~/.config/podiumscan/config.yaml`:
 - Set `model` to a vision-capable LLM (default: `anthropic/claude-opus-4-6`)
@@ -25,10 +28,10 @@ Edit `~/.config/podiumscan/config.yaml`:
 ## Usage
 
 ```bash
-./podiumscan-read document.pdf
-./podiumscan-read concert-poster.jpg
-./podiumscan-read -c "Look at page 3" program.pdf
-./podiumscan-read -v document.docx
+podiumscan document.pdf
+podiumscan concert-poster.jpg
+podiumscan -c "Look at page 3" program.pdf
+podiumscan -v document.docx
 ```
 
 ### Options
@@ -88,7 +91,7 @@ See `config.example.yaml` for the full format. Key sections:
 ## Model updater
 
 ```bash
-./podiumscan-update-models
+podiumscan-update-models
 ```
 
 Queries an LLM for currently available PDF/vision-capable models, cross-references with LiteLLM's registry, and updates the commented model list in your config file.

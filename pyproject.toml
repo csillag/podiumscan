@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "podiumscan"
+version = "0.1.0"
+description = "Extract structured performance data from music program booklets using an LLM"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "litellm",
+    "PyYAML",
+    "PyMuPDF",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "build",
+    "twine",
+]
+
+[project.scripts]
+podiumscan = "podiumscan.cli:main"
+podiumscan-update-models = "podiumscan.update_models:main"
+
+[tool.setuptools.packages.find]
+include = ["podiumscan*"]
+
+[tool.setuptools.package-data]
+podiumscan = ["../config.example.yaml"]

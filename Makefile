@@ -1,4 +1,4 @@
-.PHONY: install install-dev clean build release
+.PHONY: install install-dev test clean build release
 
 install:
 	pip install -e .
@@ -6,8 +6,11 @@ install:
 install-dev:
 	pip install -e ".[dev]"
 
+test:
+	python -m pytest tests/ -v
+
 clean:
-	rm -rf dist/ build/ src/*.egg-info
+	rm -rf dist/ build/ *.egg-info
 
 build: clean
 	python -m build
