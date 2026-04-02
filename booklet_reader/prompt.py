@@ -86,6 +86,7 @@ Schema:
 - pieces must always be an array, even for a single piece.
 - co_performers must always be an array, empty if solo.
 - teacher and accompanist should be null if not mentioned in the document.
+- If the composer of a piece is unknown or cannot be determined, use "<UNKNOWN>" as the composer value.
 {comment_block}"""
 
 
