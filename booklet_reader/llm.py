@@ -56,32 +56,68 @@ def build_messages_with_images(prompt, images):
     return [{"role": "user", "content": content}]
 
 
-def parse_llm_response(raw_text):
-    """Parse the raw LLM response text into a list of result dicts."""
-    text = raw_text.strip()
+def _strip_markdown_fences(text):
+    """Strip markdown code fences if present."""
+    text = text.strip()
     if text.startswith("```"):
         lines = text.split("\n")
         lines = lines[1:]
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
         text = "\n".join(lines).strip()
+    return text
 
+
+def parse_llm_response(raw_text):
+    """Parse the LLM response, extracting JSON even if mixed with explanation text.
+
+    Returns (results, explanation) tuple:
+    - results: parsed list of dicts, or None if no valid JSON found
+    - explanation: any non-JSON text from the response, or None
+    """
+    text = _strip_markdown_fences(raw_text.strip())
+
+    # Try parsing the whole thing as JSON first
     try:
         result = json.loads(text)
-    except json.JSONDecodeError as e:
-        raise LLMError(f"Error: LLM returned invalid JSON: {e}")
+        if isinstance(result, list):
+            return result, None
+    except (json.JSONDecodeError, ValueError):
+        pass
 
-    if not isinstance(result, list):
-        raise LLMError("Error: LLM returned invalid JSON: expected a JSON array")
+    # Try to find a JSON array embedded in the text
+    # Look for the outermost [...] block
+    start = text.find("[")
+    if start != -1:
+        # Find the matching closing bracket
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == "[":
+                depth += 1
+            elif text[i] == "]":
+                depth -= 1
+                if depth == 0:
+                    json_str = text[start:i + 1]
+                    try:
+                        result = json.loads(json_str)
+                        if isinstance(result, list):
+                            explanation = (text[:start] + text[i + 1:]).strip()
+                            explanation = _strip_markdown_fences(explanation)
+                            return result, explanation if explanation else None
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                    break
 
-    return result
+    # Nothing parseable found
+    return None, raw_text.strip()
 
 
-def try_level(model, api_key, messages, prompt):
+def try_level(model, api_key, messages, prompt, verbose=False):
     """Try sending messages to the LLM. Retry once on invalid JSON with a nudge.
 
-    If the LLM returns plain text (not JSON), print it in cyan to stderr.
     Returns parsed results list on success, or None on failure.
+    On success with explanation: prints explanation to stderr only if verbose.
+    On failure: always prints the LLM's response to stderr in cyan.
     """
     for attempt in range(2):
         try:
@@ -91,23 +127,28 @@ def try_level(model, api_key, messages, prompt):
             return None
 
         raw_text = response.choices[0].message.content
-        try:
-            return parse_llm_response(raw_text)
-        except LLMError:
-            # Print the LLM's response in cyan — it's likely a plain text explanation
-            print(f"{CYAN}{raw_text}{RESET}", file=sys.stderr)
-            if attempt == 0:
-                print(
-                    "LLM returned invalid JSON. Retrying with guidance...",
-                    file=sys.stderr,
-                )
-                retry_prompt = build_retry_prompt(raw_text)
-                messages = messages + [
-                    {"role": "assistant", "content": raw_text},
-                    {"role": "user", "content": retry_prompt},
-                ]
-                continue
-            return None
+        results, explanation = parse_llm_response(raw_text)
+
+        if results is not None:
+            # Successful extraction
+            if explanation and verbose:
+                print(f"{CYAN}{explanation}{RESET}", file=sys.stderr)
+            return results
+
+        # No JSON found at all
+        print(f"{CYAN}{explanation or raw_text}{RESET}", file=sys.stderr)
+        if attempt == 0:
+            print(
+                "LLM returned invalid JSON. Retrying with guidance...",
+                file=sys.stderr,
+            )
+            retry_prompt = build_retry_prompt(raw_text)
+            messages = messages + [
+                {"role": "assistant", "content": raw_text},
+                {"role": "user", "content": retry_prompt},
+            ]
+            continue
+        return None
 
 
 _MIME_TYPES = {
@@ -131,7 +172,7 @@ _LEVEL_NAMES = {
 }
 
 
-def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes, image_list):
+def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes, image_list, verbose=False):
     """Run the cascading LLM submission: raw document → PDF → images.
 
     Each level tries once, retries on invalid JSON with a nudge, then falls to next level.
@@ -157,7 +198,7 @@ def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes
 
     for i, (level_name, messages) in enumerate(levels):
         print(_LEVEL_NAMES[level_name], file=sys.stderr)
-        result = try_level(model, api_key, messages, prompt)
+        result = try_level(model, api_key, messages, prompt, verbose=verbose)
         if result is not None:
             return result
         if i < len(levels) - 1:

@@ -55,26 +55,42 @@ class TestBuildMessagesWithImages:
 class TestParseLlmResponse:
     def test_valid_json_array(self):
         raw = json.dumps([{"event_name": "Test", "performer": "A"}])
-        result = parse_llm_response(raw)
-        assert isinstance(result, list)
-        assert result[0]["event_name"] == "Test"
+        results, explanation = parse_llm_response(raw)
+        assert isinstance(results, list)
+        assert results[0]["event_name"] == "Test"
+        assert explanation is None
 
     def test_empty_array(self):
-        result = parse_llm_response("[]")
-        assert result == []
+        results, explanation = parse_llm_response("[]")
+        assert results == []
+        assert explanation is None
 
     def test_strips_markdown_fences(self):
         raw = '```json\n[{"event_name": "Test"}]\n```'
-        result = parse_llm_response(raw)
-        assert result[0]["event_name"] == "Test"
+        results, explanation = parse_llm_response(raw)
+        assert results[0]["event_name"] == "Test"
+        assert explanation is None
 
-    def test_invalid_json(self):
-        with pytest.raises(LLMError, match="invalid JSON"):
-            parse_llm_response("not json at all")
+    def test_json_embedded_in_explanation(self):
+        raw = 'I found the performer.\n\n[{"event_name": "Test"}]\n\nHope this helps.'
+        results, explanation = parse_llm_response(raw)
+        assert results[0]["event_name"] == "Test"
+        assert "I found the performer" in explanation
+
+    def test_json_with_markdown_fences_in_explanation(self):
+        raw = 'Here is the result:\n\n```json\n[{"event_name": "Test"}]\n```\n\nDone.'
+        results, explanation = parse_llm_response(raw)
+        assert results[0]["event_name"] == "Test"
+
+    def test_plain_text_only(self):
+        results, explanation = parse_llm_response("I could not find any performers.")
+        assert results is None
+        assert "could not find" in explanation
 
     def test_not_an_array(self):
-        with pytest.raises(LLMError, match="expected a JSON array"):
-            parse_llm_response('{"event_name": "Test"}')
+        results, explanation = parse_llm_response('{"event_name": "Test"}')
+        assert results is None
+        assert explanation is not None
 
 
 class TestTryLevel:
@@ -84,14 +100,35 @@ class TestTryLevel:
             result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result[0]["event_name"] == "OK"
 
-    def test_retry_on_bad_json(self):
-        bad = _mock_response("not json")
+    def test_success_with_embedded_json(self):
+        mixed = _mock_response('Found it!\n[{"event_name": "OK"}]')
+        with patch("litellm.completion", return_value=mixed):
+            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
+        assert result[0]["event_name"] == "OK"
+
+    def test_explanation_hidden_without_verbose(self, capsys):
+        mixed = _mock_response('Found it!\n[{"event_name": "OK"}]')
+        with patch("litellm.completion", return_value=mixed):
+            try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt", verbose=False)
+        captured = capsys.readouterr()
+        assert "Found it" not in captured.err
+
+    def test_explanation_shown_with_verbose(self, capsys):
+        mixed = _mock_response('Found it!\n[{"event_name": "OK"}]')
+        with patch("litellm.completion", return_value=mixed):
+            try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt", verbose=True)
+        captured = capsys.readouterr()
+        assert "Found it" in captured.err
+        assert "\033[36m" in captured.err
+
+    def test_retry_on_plain_text(self):
+        bad = _mock_response("I cannot parse this document.")
         good = _mock_response('[{"event_name": "OK"}]')
         with patch("litellm.completion", side_effect=[bad, good]):
             result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result[0]["event_name"] == "OK"
 
-    def test_returns_none_after_two_bad_json(self):
+    def test_returns_none_after_two_failures(self):
         bad = _mock_response("not json")
         with patch("litellm.completion", return_value=bad):
             result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
@@ -101,6 +138,15 @@ class TestTryLevel:
         with patch("litellm.completion", side_effect=Exception("API down")):
             result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
         assert result is None
+
+    def test_failure_always_prints_cyan(self, capsys):
+        explanation = "I could not find any of the listed performers."
+        bad = _mock_response(explanation)
+        with patch("litellm.completion", return_value=bad):
+            try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt", verbose=False)
+        captured = capsys.readouterr()
+        assert explanation in captured.err
+        assert "\033[36m" in captured.err
 
 
 class TestRunCascade:
@@ -147,18 +193,6 @@ class TestRunCascade:
                     pdf_bytes=b"fake pdf",
                     image_list=[b"\x89PNGfake"],
                 )
-
-
-class TestTryLevelPlainText:
-    def test_plain_text_printed_cyan_on_stderr(self, capsys):
-        explanation = "I could not find any of the listed performers in this document."
-        bad = _mock_response(explanation)
-        with patch("litellm.completion", return_value=bad):
-            result = try_level("model", "key", [{"role": "user", "content": "hi"}], "prompt")
-        assert result is None
-        captured = capsys.readouterr()
-        assert explanation in captured.err
-        assert "\033[36m" in captured.err  # cyan
 
 
 class TestRunCascadeNarration:

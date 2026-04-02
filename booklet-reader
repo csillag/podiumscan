@@ -40,6 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description="Extract performance data from music program booklets.")
     parser.add_argument("document", help="Path to the document file (PDF, DOC, DOCX, ODT, or image)")
     parser.add_argument("-c", "--comment", help="Additional guidance for the LLM (e.g. 'Look at page 3')")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show LLM explanation text on stderr")
     args = parser.parse_args()
 
     document_path = os.path.abspath(args.document)
@@ -119,6 +120,7 @@ def main():
             document_mime=document_mime,
             pdf_bytes=pdf_bytes,
             image_list=image_list,
+            verbose=args.verbose,
         )
     except LLMError as e:
         print(str(e), file=sys.stderr)
