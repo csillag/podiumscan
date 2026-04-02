@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Python CLI tool that extracts structured performance data from music competition program booklets (PDF, DOC, DOCX). It uses an LLM (via LiteLLM) to analyze documents and find performances by a configured list of performers, outputting predictable JSON to stdout.
+A Python CLI tool that extracts structured performance data from music program booklets — competitions, concerts, recitals, festivals, and other public performances (PDF, DOC, DOCX, ODT, and images). It uses an LLM (via LiteLLM) to analyze documents and find performances by a configured list of performers, outputting predictable JSON to stdout.
 
 ## Components
 
@@ -15,9 +15,11 @@ Accepts a single document file, analyzes it via an LLM, and outputs structured J
 booklet-reader document.pdf
 booklet-reader document.docx
 booklet-reader document.doc
+booklet-reader document.odt
+booklet-reader poster.jpg
 ```
 
-**Config location:** `~/.config/booklet-reader.conf`
+**Config location:** `~/.config/booklet-reader/config.yaml`
 
 **Exit codes:**
 - 0: matches found, JSON written to stdout
@@ -35,7 +37,7 @@ booklet-model-updater
 
 ### 3. `config.example.yaml` — Example Configuration
 
-Ships with the repo. Copied to `~/.config/booklet-reader.conf` automatically on first run of either script. Located relative to the script's own directory (i.e. the scripts resolve `config.example.yaml` from the same directory they live in).
+Ships with the repo. Copied to `~/.config/booklet-reader/config.yaml` automatically on first run of either script. Located relative to the script's own directory (i.e. the scripts resolve `config.example.yaml` from the same directory they live in).
 
 ---
 
@@ -43,10 +45,12 @@ Ships with the repo. Copied to `~/.config/booklet-reader.conf` automatically on 
 
 ```yaml
 # === Model Configuration ===
-model: "openai/gpt-4o"
-model_updater_model: "openai/gpt-4o"
+model: "xai/grok-4.20-0309-non-reasoning"
+api_key: "your-api-key-here"
+model_updater_model: "xai/grok-4.20-0309-non-reasoning"
+model_updater_api_key: ""  # optional, defaults to api_key
 
-# === Available Vision-Capable Models ===
+# === Available Models (PDF and/or Vision-Capable) ===
 # Copy a model identifier from this list to the 'model' field above.
 # DO NOT edit this block manually — it is maintained by booklet-model-updater.
 # --- BEGIN AVAILABLE MODELS ---
@@ -58,36 +62,38 @@ model_updater_model: "openai/gpt-4o"
 
 # === Performers ===
 performers:
-  - name: "Csillag Kristóf"
+  - name: "Nagy Eszter"
     instruments:
-      - names: "gordonka / cello"
+      - names: "hegedű / violin"
         teachers:
-          - name: "Bolykiné Kálló Eszter"
+          - name: "Tóth Katalin"
             from: 2020-09-01
             to: 2025-06-30
         accompanists:
-          - name: "Szokolayné Pásztor Edina"
+          - name: "Fekete Mária"
             from: 2023-09-01
       - names: "zongora / piano"
         teachers:
-          - name: "Kiss Anna"
+          - name: "Horváth László"
             from: 2021-09-01
 
-  - name: "Csillag Mátyás"
+  - name: "Szabó Bence"
     instruments:
       - names: "gordonka / cello"
         teachers:
-          - name: "Salát Ildikó"
+          - name: "Varga Péter"
             from: 2022-09-01
         accompanists:
-          - name: "Várterész Anna"
+          - name: "Molnár Zsófia"
             from: 2023-09-01
 ```
 
 ### Config Field Details
 
-- `model`: LiteLLM model identifier used by `booklet-reader` for document analysis. Must support PDF/vision input.
+- `model`: LiteLLM model identifier used by `booklet-reader` for document analysis. Must support PDF and/or image/vision input.
+- `api_key`: API key for the provider of the configured model. Passed directly to LiteLLM, overriding any environment variables.
 - `model_updater_model`: LiteLLM model identifier used by `booklet-model-updater` to query for available models.
+- `model_updater_api_key`: Optional. API key for the model updater's provider. If empty or absent, falls back to `api_key`.
 - `available_models`: Auto-maintained commented list between `BEGIN`/`END` markers. Users copy identifiers from here to the `model` field. Never edited manually.
 - `performers`: List of performers to search for.
   - `name`: Full name of the performer (used in output even if the document truncates it).
@@ -105,25 +111,25 @@ Always a JSON array to stdout, even for a single match.
 ```json
 [
   {
-    "event_name": "VI. Gyermek- és Ifjúsági Kamarazenei Fesztivál",
-    "performance_date": "2025-12-06",
-    "performer": "Csillag Kristóf",
-    "instrument": "gordonka",
+    "event_name": "III. Ifjúsági Kamarazenei Fesztivál",
+    "performance_date": "2025-11-15",
+    "performer": "Nagy Eszter",
+    "instrument": "hegedű",
     "pieces": [
       {
-        "composer": "Wolf Péter",
-        "title": "Poéma"
+        "composer": "J. S. Bach",
+        "title": "Partita No. 2 in D minor, BWV 1004 / Sarabande"
       },
       {
-        "composer": "Seiber Mátyás",
-        "title": "Leichte Tänze / Ragtime, Slow Fox, Waltz, Foxtrot"
+        "composer": "Bartók Béla",
+        "title": "Román népi táncok"
       }
     ],
-    "teacher": "Bolykiné Kálló Eszter",
-    "accompanist": "Szokolayné Pásztor Edina",
+    "teacher": "Tóth Katalin",
+    "accompanist": "Fekete Mária",
     "co_performers": [
       {
-        "name": "Csillag Ilona",
+        "name": "Kiss Dániel",
         "instrument": "zongora"
       }
     ]
@@ -146,22 +152,40 @@ Always a JSON array to stdout, even for a single match.
 
 ## booklet-reader Pipeline
 
-1. **Dependency check** — Verify Python package dependencies (LiteLLM, PyYAML) are installed. Print clear install instructions to stderr and exit 2 if missing.
-2. **Config check** — If `~/.config/booklet-reader.conf` doesn't exist, copy `config.example.yaml` to that path, print message to stderr: `"Before reading, please fill in your configuration at ~/.config/booklet-reader.conf"`, exit 2. If exists but invalid, print validation errors to stderr, exit 2.
-3. **Detect file type** — By extension: `.pdf`, `.doc`, `.docx`.
-4. **System dependency check** — If DOC or DOCX, verify `libreoffice` is installed. Print install instructions to stderr and exit 2 if missing.
-5. **Convert if needed** — DOC/DOCX to PDF via `libreoffice --headless --convert-to pdf` to a temp directory. Clean up temp files on exit.
-6. **Send to LLM** — Via LiteLLM, send the PDF along with a prompt containing:
+1. **Dependency check** — Verify Python package dependencies (LiteLLM, PyYAML, PyMuPDF) are installed. Print clear install instructions to stderr and exit 2 if missing.
+2. **Config check** — If `~/.config/booklet-reader/config.yaml` doesn't exist, copy `config.example.yaml` to that path, print message to stderr: `"Before reading, please fill in your configuration at ~/.config/booklet-reader/config.yaml"`, exit 2. If exists but invalid, print validation errors to stderr, exit 2.
+3. **Detect file type** — By extension: `.pdf`, `.doc`, `.docx`, `.odt`, `.png`, `.jpg`, `.jpeg`, `.webp`.
+4. **System dependency check** — If DOC, DOCX, or ODT, verify `libreoffice` is installed. Print install instructions to stderr and exit 2 if missing.
+5. **Build prompt** — Construct the LLM prompt containing:
    - The list of performer names with all aliases to search for.
    - Instruction for flexible name matching (missing middle names, abbreviations).
    - The exact JSON schema for the response.
    - Instruction to extract the specific performance date from schedule info.
    - Instruction to identify co-performers, pieces, teacher, accompanist.
-7. **Parse response** — Validate the returned JSON against the expected schema. If the LLM returns malformed JSON, retry once; if still malformed, print error to stderr, exit 2.
-8. **Fill in gaps** — For each match: if `teacher` or `accompanist` is `null` in the LLM response, look up the config by instrument and performance date to fill in.
-9. **Output** — Print JSON array to stdout. Exit 0 if array is non-empty, exit 1 if empty.
+6. **Cascading LLM submission** — Try progressively degraded input formats until a valid response is obtained:
 
-All error conditions in steps 1-7 exit with code 2.
+   **Level 1: Raw document** (for DOC, DOCX, ODT only; skip for PDF and images)
+   - Send the raw document file to the LLM.
+   - If the LLM returns valid JSON → done.
+   - If the LLM returns invalid JSON → retry once, asking for valid JSON with all required fields populated from the document.
+   - If API error or second invalid JSON → fall to Level 2.
+
+   **Level 2: PDF** (for DOC/DOCX/ODT: convert via libreoffice; for PDF: use original; skip for images)
+   - Send the PDF file to the LLM.
+   - If the LLM returns valid JSON → done.
+   - If the LLM returns invalid JSON → retry once with the same nudge.
+   - If API error or second invalid JSON → fall to Level 3.
+
+   **Level 3: Images** (for PDF: render pages to PNG via pymupdf; for images: use original file)
+   - Send page images to the LLM.
+   - If the LLM returns valid JSON → done.
+   - If the LLM returns invalid JSON → retry once with the same nudge.
+   - If API error or second invalid JSON → hard fail, print error to stderr, exit 2.
+
+7. **Fill in gaps** — For each match: if `teacher` or `accompanist` is `null` in the LLM response, look up the config by instrument and performance date to fill in.
+8. **Output** — Print JSON array to stdout. Exit 0 if array is non-empty, exit 1 if empty.
+
+All error conditions in steps 1-6 exit with code 2.
 
 ---
 
@@ -169,10 +193,10 @@ All error conditions in steps 1-7 exit with code 2.
 
 1. **Dependency check** — Verify Python package dependencies (LiteLLM, PyYAML) are installed. Print clear install instructions to stderr and exit 1 if missing.
 2. **Config check:**
-   - If `~/.config/booklet-reader.conf` doesn't exist: copy `config.example.yaml`, print reminder to stderr to fill in the config, exit 0.
+   - If `~/.config/booklet-reader/config.yaml` doesn't exist: copy `config.example.yaml`, print reminder to stderr to fill in the config, exit 0.
    - If exists but invalid: print validation errors to stderr, exit 1.
 3. **Read config** — Get `model_updater_model` value.
-4. **Query LLM** — Ask the configured model for a list of currently available LLM models that support PDF/document/vision input as part of their API.
+4. **Query LLM** — Ask the configured model for a list of currently available LLM models that support PDF and/or image/vision input as part of their API.
 5. **Cross-reference with LiteLLM** — Validate each returned model name against LiteLLM's model registry. Discard any that aren't valid LiteLLM identifiers.
 6. **Compare** — Diff against the current `available_models` list in the config file.
 7. **Update if needed:**
@@ -186,9 +210,10 @@ All error conditions in steps 1-7 exit with code 2.
 ### Python packages
 - `litellm` — Multi-provider LLM interface
 - `PyYAML` — Config file parsing
+- `pymupdf` — PDF page rendering to images
 
 ### System dependencies
-- `libreoffice` — Required only for DOC/DOCX conversion. Checked at runtime only when processing DOC/DOCX files. Not required for PDF-only usage.
+- `libreoffice` — Required only for DOC/DOCX/ODT conversion. Checked at runtime only when processing these file types. Not required for PDF or image input.
 
 ---
 
@@ -210,9 +235,11 @@ booklet-reader/
 All errors go to stderr. Stdout is reserved exclusively for JSON output (booklet-reader) or new model names (model-updater).
 
 - Missing Python dependency: `"Error: Required package 'litellm' is not installed. Install it with: pip install litellm"`
-- Missing libreoffice: `"Error: 'libreoffice' is required for DOC/DOCX conversion but was not found. Install it with: sudo apt install libreoffice"`
-- Missing config: `"Before reading, please fill in your configuration at ~/.config/booklet-reader.conf"`
+- Missing libreoffice: `"Error: 'libreoffice' is required for DOC/DOCX/ODT conversion but was not found. Install it with: sudo apt install libreoffice"`
+- Missing config: `"Before reading, please fill in your configuration at ~/.config/booklet-reader/config.yaml"`
 - Invalid config: Specific validation errors (e.g. `"Config error: 'model' field is required"`, `"Config error: 'performers' must be a non-empty list"`)
 - LLM API error: Pass through the error message from LiteLLM
-- Malformed LLM response: `"Error: LLM returned invalid JSON. Retrying..."` then `"Error: LLM returned invalid JSON after retry."`
-- Unsupported file type: `"Error: Unsupported file type '.xyz'. Supported: .pdf, .doc, .docx"`
+- Malformed LLM response (within a level): `"LLM returned invalid JSON. Retrying with guidance..."` on stderr, then retry asking for valid JSON with all required fields populated from the document.
+- Cascade fallback: `"Level N failed, falling to next format..."` on stderr (informational, not an error).
+- All levels exhausted: `"Error: All input format levels failed. LLM could not produce valid output."`
+- Unsupported file type: `"Error: Unsupported file type '.xyz'. Supported: .pdf, .doc, .docx, .odt, .png, .jpg, .jpeg, .webp"`
