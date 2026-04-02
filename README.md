@@ -1,6 +1,6 @@
 # podiumscan
 
-![podiumscan](images/podiumscan.jpg)
+![podiumscan](https://raw.githubusercontent.com/csillag/podiumscan/main/images/podiumscan.jpg)
 
 Extract structured performance data from music program booklets using an LLM.
 
