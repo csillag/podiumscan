@@ -7,6 +7,7 @@ import logging
 
 import litellm
 
+from booklet_reader.cache import compute_cache_key, read_cache, write_cache
 from booklet_reader.prompt import build_retry_prompt
 
 # Suppress LiteLLM's verbose logging (provider lists, debug hints, etc.)
@@ -172,7 +173,7 @@ _LEVEL_NAMES = {
 }
 
 
-def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes, image_list, verbose=False):
+def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes, image_list, verbose=False, config_bytes=b""):
     """Run the cascading LLM submission: raw document → PDF → images.
 
     Each level tries once, retries on invalid JSON with a nudge, then falls to next level.
@@ -184,22 +185,35 @@ def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes
     # Level 1: Raw document (DOC/DOCX/ODT only)
     if document_bytes is not None and document_mime is not None:
         messages = build_messages_with_document(prompt, document_bytes, document_mime)
-        levels.append(("raw document", messages))
+        levels.append(("raw document", messages, document_bytes))
 
     # Level 2: PDF
     if pdf_bytes is not None:
         messages = build_messages_with_document(prompt, pdf_bytes, "application/pdf")
-        levels.append(("PDF", messages))
+        levels.append(("PDF", messages, pdf_bytes))
 
     # Level 3: Images
     if image_list is not None:
         messages = build_messages_with_images(prompt, image_list)
-        levels.append(("images", messages))
+        img_key_bytes = pdf_bytes if pdf_bytes is not None else b"".join(image_list)
+        levels.append(("images", messages, img_key_bytes))
 
-    for i, (level_name, messages) in enumerate(levels):
+    for i, (level_name, messages, level_doc_bytes) in enumerate(levels):
         print(_LEVEL_NAMES[level_name], file=sys.stderr)
+
+        cache_key = compute_cache_key(config_bytes, level_doc_bytes, prompt, level_name)
+        cached = read_cache(cache_key)
+        if cached is not None:
+            print(f"Cache hit for {level_name}", file=sys.stderr)
+            results, explanation = parse_llm_response(cached)
+            if results is not None:
+                if explanation and verbose:
+                    print(f"{CYAN}{explanation}{RESET}", file=sys.stderr)
+                return results
+
         result, raw_text = try_level(model, api_key, messages, prompt, verbose=verbose)
         if result is not None:
+            write_cache(cache_key, raw_text)
             return result
         if i < len(levels) - 1:
             print("Moving to next format...", file=sys.stderr)

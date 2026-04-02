@@ -59,6 +59,8 @@ def main():
             sys.exit(2)
         config = load_config(config_path)
         validate_config(config)
+        with open(config_path, "rb") as f:
+            config_bytes = f.read()
     except ConfigError as e:
         print(str(e), file=sys.stderr)
         sys.exit(2)
@@ -121,6 +123,7 @@ def main():
             pdf_bytes=pdf_bytes,
             image_list=image_list,
             verbose=args.verbose,
+            config_bytes=config_bytes,
         )
     except LLMError as e:
         print(str(e), file=sys.stderr)

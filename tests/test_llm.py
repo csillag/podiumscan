@@ -156,7 +156,9 @@ class TestTryLevel:
 class TestRunCascade:
     def test_succeeds_at_level_1(self):
         good = _mock_response('[{"event_name": "OK"}]')
-        with patch("litellm.completion", return_value=good):
+        with patch("litellm.completion", return_value=good), \
+             patch("booklet_reader.llm.read_cache", return_value=None), \
+             patch("booklet_reader.llm.write_cache"):
             result = run_cascade(
                 model="model",
                 api_key="key",
@@ -172,7 +174,9 @@ class TestRunCascade:
         bad = _mock_response("not json")
         good = _mock_response('[{"event_name": "OK"}]')
         # Level 1 (doc): bad, bad. Level 2 (pdf): bad, bad. Level 3 (images): good.
-        with patch("litellm.completion", side_effect=[bad, bad, bad, bad, good]):
+        with patch("litellm.completion", side_effect=[bad, bad, bad, bad, good]), \
+             patch("booklet_reader.llm.read_cache", return_value=None), \
+             patch("booklet_reader.llm.write_cache"):
             result = run_cascade(
                 model="model",
                 api_key="key",
@@ -186,7 +190,9 @@ class TestRunCascade:
 
     def test_hard_fail_all_levels(self):
         bad = _mock_response("not json")
-        with patch("litellm.completion", return_value=bad):
+        with patch("litellm.completion", return_value=bad), \
+             patch("booklet_reader.llm.read_cache", return_value=None), \
+             patch("booklet_reader.llm.write_cache"):
             with pytest.raises(LLMError, match="All input format levels failed"):
                 run_cascade(
                     model="model",
@@ -202,7 +208,9 @@ class TestRunCascade:
 class TestRunCascadeNarration:
     def test_narrates_levels_on_stderr(self, capsys):
         good = _mock_response('[{"event_name": "OK"}]')
-        with patch("litellm.completion", return_value=good):
+        with patch("litellm.completion", return_value=good), \
+             patch("booklet_reader.llm.read_cache", return_value=None), \
+             patch("booklet_reader.llm.write_cache"):
             run_cascade(
                 model="model",
                 api_key="key",
@@ -218,7 +226,9 @@ class TestRunCascadeNarration:
     def test_narrates_fallback_on_stderr(self, capsys):
         bad = _mock_response("I cannot read this document.")
         good = _mock_response('[{"event_name": "OK"}]')
-        with patch("litellm.completion", side_effect=[bad, bad, good]):
+        with patch("litellm.completion", side_effect=[bad, bad, good]), \
+             patch("booklet_reader.llm.read_cache", return_value=None), \
+             patch("booklet_reader.llm.write_cache"):
             run_cascade(
                 model="model",
                 api_key="key",
@@ -230,3 +240,24 @@ class TestRunCascadeNarration:
             )
         captured = capsys.readouterr()
         assert "Moving to next format" in captured.err
+
+
+class TestRunCascadeCache:
+    def test_cache_hit_skips_llm(self, capsys):
+        cached_response = '[{"event_name": "Cached"}]'
+        with patch("booklet_reader.llm.read_cache", return_value=cached_response), \
+             patch("booklet_reader.llm.write_cache"), \
+             patch("litellm.completion") as mock_llm:
+            result = run_cascade(
+                model="model",
+                api_key="key",
+                prompt="find performers",
+                document_bytes=None,
+                document_mime=None,
+                pdf_bytes=b"fake pdf",
+                image_list=None,
+            )
+        assert result[0]["event_name"] == "Cached"
+        mock_llm.assert_not_called()
+        captured = capsys.readouterr()
+        assert "Cache hit" in captured.err
