@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "podiumscan"
-version = "0.1.1"
+version = "0.1.2"
 description = "Extract structured performance data from music program booklets using an LLM"
 readme = "README.md"
 requires-python = ">=3.10"
