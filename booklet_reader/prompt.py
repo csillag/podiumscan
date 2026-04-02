@@ -55,7 +55,7 @@ Your task: find any performances by the following performers and extract structu
 2. Be flexible with name matching: the document may omit middle names, use abbreviations, or use slightly different forms. Match on family name + first name even if middle names differ.
 3. For each match, extract the specific performance date. The document may have a schedule at the beginning showing which day/time slot each category performs — use this to determine the exact date, not just the event date range.
 4. Identify the instrument played. Use the canonical name (first alias) from the performer list above.
-5. List ALL pieces performed (composer + title). Include opus numbers, movement names, and any other details mentioned.
+5. List ALL pieces performed (composer + title). Include opus numbers, movement names, and any other details mentioned. Note: in competition booklets, the repertoire may not appear directly next to the performer's name. The allowed pieces are sometimes listed separately (e.g., in a preamble or category description), and performers' entries reference them using codes, numbers, or abbreviations. Cross-reference these to resolve the full composer and title.
 6. If a teacher (felkészítő tanár, tanár) is mentioned for this performer's entry, include it.
 7. If an accompanist (kísérő, zongorakísérő) is mentioned, include it.
 8. If the performer is part of a duo, trio, quartet, or other ensemble, list the other members as co_performers with their instruments. If solo, use an empty array.
