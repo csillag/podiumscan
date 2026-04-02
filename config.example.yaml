@@ -33,27 +33,27 @@ model_updater_api_key: ""
 # The first alias is the canonical name used in output.
 # Teachers and accompanists have date ranges (from/to). 'to' is optional (means current).
 performers:
-  - name: "Nagy Eszter"
+  - name: "Emily Parker"
     instruments:
-      - names: "hegedű / violin"
+      - names: "violin"
         teachers:
-          - name: "Tóth Katalin"
+          - name: "Sarah Mitchell"
             from: 2020-09-01
             to: 2025-06-30
         accompanists:
-          - name: "Fekete Mária"
+          - name: "James Crawford"
             from: 2023-09-01
-      - names: "zongora / piano"
+      - names: "piano"
         teachers:
-          - name: "Horváth László"
+          - name: "David Chen"
             from: 2021-09-01
 
-  - name: "Szabó Bence"
+  - name: "Oliver Brooks"
     instruments:
-      - names: "gordonka / cello"
+      - names: "cello"
         teachers:
-          - name: "Varga Péter"
+          - name: "Rachel Webb"
             from: 2022-09-01
         accompanists:
-          - name: "Molnár Zsófia"
+          - name: "Laura Bennett"
             from: 2023-09-01

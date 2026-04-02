@@ -56,18 +56,18 @@ JSON array to stdout. Example:
 ```json
 [
   {
-    "event_name": "III. Ifjusagi Kamarazenei Fesztival",
+    "event_name": "Spring Chamber Music Festival",
     "performance_date": "2025-11-15",
-    "performer": "Nagy Eszter",
-    "instrument": "hegedu",
+    "performer": "Emily Parker",
+    "instrument": "violin",
     "pieces": [
       { "composer": "J. S. Bach", "title": "Partita No. 2 in D minor, BWV 1004 / Sarabande" },
-      { "composer": "Bartok Bela", "title": "Roman nepi tancok" }
+      { "composer": "Dvorak", "title": "Slavonic Dance No. 2 in E minor" }
     ],
-    "teacher": "Toth Katalin",
-    "accompanist": "Fekete Maria",
+    "teacher": "Sarah Mitchell",
+    "accompanist": "James Crawford",
     "co_performers": [
-      { "name": "Kiss Daniel", "instrument": "zongora" }
+      { "name": "Tom Wilson", "instrument": "piano" }
     ]
   }
 ]
