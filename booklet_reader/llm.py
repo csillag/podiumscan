@@ -31,8 +31,11 @@ def build_messages_with_document(prompt, doc_bytes, mime_type):
             "content": [
                 {"type": "text", "text": prompt},
                 {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{mime_type};base64,{b64}"},
+                    "type": "file",
+                    "file": {
+                        "file_data": f"data:{mime_type};base64,{b64}",
+                        "format": mime_type,
+                    },
                 },
             ],
         }

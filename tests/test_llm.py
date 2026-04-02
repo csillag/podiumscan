@@ -26,10 +26,12 @@ class TestBuildMessagesWithDocument:
         assert messages[0]["role"] == "user"
         content = messages[0]["content"]
         text_parts = [c for c in content if c["type"] == "text"]
-        doc_parts = [c for c in content if c["type"] == "image_url"]
+        doc_parts = [c for c in content if c["type"] == "file"]
         assert len(text_parts) == 1
         assert len(doc_parts) == 1
         assert text_parts[0]["text"] == "Find performers"
+        assert doc_parts[0]["file"]["format"] == "application/pdf"
+        assert "base64," in doc_parts[0]["file"]["file_data"]
 
 
 class TestBuildMessagesWithImages:
