@@ -3,9 +3,15 @@ import json
 import os
 import sys
 
+import logging
+
 import litellm
 
 from booklet_reader.prompt import build_retry_prompt
+
+# Suppress LiteLLM's verbose logging (provider lists, debug hints, etc.)
+litellm.suppress_debug_info = True
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
 class LLMError(Exception):
@@ -78,7 +84,7 @@ def try_level(model, api_key, messages, prompt):
         try:
             response = litellm.completion(model=model, api_key=api_key, messages=messages)
         except Exception as e:
-            print(f"API error: {e}", file=sys.stderr)
+            print(f"API error: {type(e).__name__}", file=sys.stderr)
             return None
 
         raw_text = response.choices[0].message.content
