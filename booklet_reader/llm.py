@@ -134,6 +134,7 @@ def run_cascade(model, api_key, prompt, document_bytes, document_mime, pdf_bytes
     Each level tries once, retries on invalid JSON with a nudge, then falls to next level.
     Raises LLMError if all levels fail.
     """
+    print(f"Using model: {model}", file=sys.stderr)
     levels = []
 
     # Level 1: Raw document (DOC/DOCX/ODT only)
