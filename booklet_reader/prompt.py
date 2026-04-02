@@ -62,7 +62,9 @@ Your task: find any performances by the following performers and extract structu
 2. Be flexible with name matching: the document may omit middle names, use abbreviations, or use slightly different forms. Match on family name + first name even if middle names differ.
 3. For each match, extract the specific performance date. The document may have a schedule at the beginning showing which day/time slot each category performs — use this to determine the exact date, not just the event date range.
 4. Identify the instrument played. Use the canonical name (first alias) from the performer list above.
-5. List ALL pieces performed (composer + title). Include opus numbers, movement names, and any other details mentioned. Note: in competition booklets, the repertoire may not appear directly next to the performer's name. The allowed pieces are sometimes listed separately (e.g., in a preamble or category description), and performers' entries reference them using codes, numbers, or abbreviations. Cross-reference these to resolve the full composer and title.
+5. List ALL pieces performed (composer + title). Include opus numbers, movement names, and any other details mentioned.
+   IMPORTANT: In competition booklets, the repertoire often does NOT appear next to the performer's name. Instead, each category/age group (korcsoport) has its own "Művek" (pieces) section listing available pieces by code — typically a number (1, 2, 3...), a letter (A, B...), and a Roman numeral (I, II...), or a combined code like C-III. Each performer's entry then references these codes (e.g., "Műsor: 3, B, I" means they perform piece #3, piece B, and piece I from THAT category's piece list).
+   You MUST resolve these codes to full composer and title by looking up the piece list belonging to the SAME category where the performer appears. Each category has its own separate piece list — do NOT use a piece list from a different category. If you cannot resolve a code, explain why in plain text instead of returning empty pieces.
 6. If a teacher (felkészítő tanár, tanár) is mentioned for this performer's entry, include it.
 7. If an accompanist (kísérő, zongorakísérő) is mentioned, include it.
 8. If the performer is part of a duo, trio, quartet, or other ensemble, list the other members as co_performers with their instruments. If solo, use an empty array.
@@ -92,14 +94,10 @@ def build_retry_prompt(previous_response):
 
 {previous_response}
 
-Please try again. Return ONLY a valid JSON array with all required fields populated with data from the document:
-- event_name (string)
-- performance_date (YYYY-MM-DD string)
-- performer (string)
-- instrument (string)
-- pieces (array of objects with composer and title)
-- teacher (string or null)
-- accompanist (string or null)
-- co_performers (array of objects with name and instrument)
+Please return ONLY valid JSON — no extra text before or after the array. The response must be parseable by json.loads().
 
-No markdown fences, no explanation. Just the JSON array."""
+If you found matching performers, return a JSON array with all required fields (event_name, performance_date, performer, instrument, pieces, teacher, accompanist, co_performers). Every field must be populated with actual data from the document — do not return empty pieces arrays if the information is available somewhere in the document (e.g., in a separate repertoire list for that category).
+
+If you genuinely found no matches, return an empty array: []
+
+If you cannot extract the data due to document quality or format issues, return an empty array [] — do not fabricate data."""
